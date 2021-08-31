@@ -19,6 +19,8 @@ Goal: Learn the sampling distribution used for node sampling in order to improve
 - The sampling distribution might not fit the graph in hand
 - Most of the sampling approaches consider only one node degree information in sampling. However, it is not easy to generalize to heterogeneous graphs. 
 
+![Basic idea](Picture1.png)
+
 ### Basic idea:
 - Apply meta-learning approaches(e.g. black-box optimization or Bayesian optimization) to learn a sampling function
     - Parameterized sampling function p(n|theta)
