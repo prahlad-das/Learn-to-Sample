@@ -1,42 +1,38 @@
-## Overview
+# Learn to Sample
+Framework: Py Geometric: https://github.com/rusty1s/pytorch_geometric <br/>
+Concept: GNN
 
-LADIES (Layer-Dependent Importance Sampling for Training Deep and Large Graph Convolutional Networks) is a novel sampling algorithm for training GNN. It considers the previously sampled nodes for calculating layer-dependent sampling probability.
+Goal: Learn the sampling distribution used for node sampling in order to improve model accuracy. 
 
-Based on the sampled nodes in the upper layer, LADIES selects their neighborhood nodes, compute the importance probability accordingly and samples a fixed number of nodes within them. We prove theoretically and experimentally, that our proposed sampling algorithm outperforms the previous sampling methods regarding time, memory and accuracy.
+Notation:
+- P(n): Probability that a node n in Neighbors is sampled. For example: 
+   - Neighborhood sampling use a uniform sampling distribution: p(n) = 1 / |Neighbors| 
+   - Neighborhood sampling using importance smapling distribution p(n) = degree(n) / sum_degree(Neighbors)
+   - Layerwise importance sampling: p(n) = degree(n) / sum_degree(all nodes)
+- D: graph dataset
+- GNN(X|W): the GNN model that takes X as inputs with parameters W. 
+- Y: ground truth
+- Loss(): loss function
 
-You can see our NeurIPS 2019 paper [“**Layer-Dependent Importance Sampling for Training Deep and Large Graph Convolutional Networks**”](https://arxiv.org/abs/1911.07323) for more details.
+Limitations of existing approaches:
+- The sampling distribution is manually designed
+- The sampling distribution might not fit the graph in hand
+- Most of the sampling approaches consider only one node degree information in sampling. However, it is not easy to generalize to heterogeneous graphs. 
 
-## Setup
-This implementation is based on Pytorch We assume that you're using Python 3 with pip installed. To run the code, you need the following dependencies:
-
-- [Pytorch 1.0](https://pytorch.org/)
-- [gensim](https://github.com/RaRe-Technologies/gensim)
-- [networkx](https://networkx.github.io/)
-- [tqdm](https://github.com/tqdm/tqdm)
-- [numpy](https://numpy.org/)
-
-
-We upload the three small benchmark node classification datasets, cora, pubmed and citeseer in /data for usage. You can upload any graph datasets as you want, and change the data loader function in /utils.py
-
-## Usage
-Execute the following scripts to train and evaluate the model:
-
-```bash
-python3 pytorch_ladies.py --cuda 0 --dataset cora  # Train GCN with LADIES on cora.
-```
-There's also other hyperparameters to be tuned, which can be found in 'pytorch_ladies.py' for details.
-
-The main function is ``ladies_sampler()``, which sample a fixed number of nodes per layer. The sampling probability (importance) is computed adaptively according to the nodes sampled in the upper layer. We currently implement it using numpy sparse matrix multiplication. One can also implement it via pytorch multiplication or dictionary operation later. 
-
-### Citation
-
-Please consider citing the following paper when using our code for your application.
-
-```
-@inproceedings{ladies2019,
-  title={Few-Shot Representation Learning for Out-Of-Vocabulary Words},
-  author={Difan Zou and Ziniu Hu and Yewen Wang and Song Jiang and Yizhou Sun and Quanquan Gu},
-  booktitle={Advances in Neural Information Processing Systems 32: Annual Conference on Neural Information Processing Systems, NeurIPS},
-  year={2019}
-}
-```
+Basic idea:
+- Apply meta-learning approaches(e.g. black-box optimization or Bayesian optimization) to learn a sampling function
+    - Parameterized sampling function p(n|theta)
+    - Optimization: 
+        - W, Theta = arg min Loss(Y, GNN(X|W, p(n|theta)))
+- The first one to purpose the learn to sample framework
+- The design of different sampling function p(n)
+    - p(n) = a * degree(n) + b * diversity(n) + c * other_metric(n)
+    - Use manual designed features to get the other metrics:
+    https://web.stanford.edu/class/cs224w/slides/02-tradition-ml.pdf 
+        - node degree
+        - node centrality
+        - clustering coefficient
+        - graphlets
+- By directly fitting the sampling function to a task/graph, we could get a higher accuracy for the task.
+- It is worthwhile to study whether the learned sampling function could easily transfer to similar tasks.
+- Provide a programming framework to allow programmers to explore various customized sampling functions to learn (similar to nextdoor paper)
