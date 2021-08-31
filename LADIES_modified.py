@@ -139,23 +139,33 @@ def ladies_sampler(seed, batch_nodes, samp_num_list, num_nodes, lap_matrix, dept
         Sample nodes from top to bottom, based on the probability computed adaptively (layer-dependent).
     '''
     for d in range(depth):
+        
         #     row-select the lap_matrix (U) by previously sampled nodes
         #U = lap_matrix[previous_nodes , :]
         #    Only use the upper layer's neighborhood to calculate the probability.
         #pi = np.array(np.sum(U.multiply(U), axis=0))[0]
         #p = pi / np.sum(pi)
         #--------------------------------------------------------------------------------
-        # find neighbors 
+        ''' finding the neighbors. We will find an array of size number of nodes in the graph
+            in which only neighors of previous can have non zero probability. Non neighbors 
+            should have zero probability. 
+        '''
         temp_lap = lap_matrix
-        #temp_lap.setdiag(0) 
+        # selecting only rows of nodes previous nodes to find neighbors of only those nodes.
         temp = temp_lap[previous_nodes, :]
+        # Summing will give us non zero entries in respective columns if they are neighbors
+        # ravel will convert it to 1D array
         nbrs = np.ravel(np.sum(temp, axis = 0))
-
+        
+        # entries in array/list can be lesser/greater than 1, making them 1 if node is neighbor
+        # 0 elsewise
         for i in range(len(nbrs)):
             if nbrs[i]>0:
                 nbrs[i] = 1
 
-        pi = np.multiply(nbrs, prob_norm)    # [0,1,1,0..] total number of nodes in graph
+        # Multiply elementwise will give us array with neigbors with probability, 0 for non neighbors
+        pi = np.multiply(nbrs, prob_norm)    
+        # normalization
         p = pi / np.linalg.norm(pi, ord = 1)
 
         #--------------------------------------------------------------------------------
@@ -232,10 +242,14 @@ elif args.sample_method == 'full':
 
 #------------------------------------------------------
 # Modifications to original code
-adj_torch = torch_geometric.data.Data(edge_index = torch.tensor([edges[:,0], edges[:,1]]))
 
+# converting to torch graph
+adj_torch = torch_geometric.data.Data(edge_index = torch.tensor([edges[:,0], edges[:,1]]))
+# converting to networkx graph
 adj_nx = tg.to_networkx(adj_torch)
 adj_nx.num_nodes = feat_data.shape[0]
+
+# calculating centralities
 eigen_cen = list(nx.eigenvector_centrality(adj_nx).values())
 bet_cen = list(nx.betweenness_centrality(adj_nx).values())
 clos_cen = list(nx.closeness_centrality(adj_nx).values())
@@ -244,6 +258,7 @@ cen = [eigen_cen, bet_cen, clos_cen, deg_cen]
 
 i = 0
 
+# This function will be called by Bayesian optimization
 def ladies_iterate(x):
     global cen
     global i
@@ -255,10 +270,10 @@ def ladies_iterate(x):
     clos_cen = cen[2]
     deg_cen = cen[3]
 # Adding linearly to calculate probability
-    a = x[0]*0
-    b = x[1]*0
-    c = x[2]*0
-    d = x[3] +  0.00001
+    a = x[0]
+    b = x[1]
+    c = x[2]
+    d = x[3]
     a = a / (a+b+c+d)
     b = b / (a+b+c+d)
     c = c / (a+b+c+d)
