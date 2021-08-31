@@ -59,4 +59,4 @@ Goal: Learn the sampling distribution used for node sampling in order to improve
    - Node sampling with importance sampling
    - Maybe some others?
 
-## What we have till now
+## What we have done till now
